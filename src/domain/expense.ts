@@ -7,12 +7,19 @@ export const AUTO_APPROVAL_LIMIT_CENTS = 10_000;
 export const MANAGER_APPROVAL_LIMIT_CENTS = 100_000;
 export const PERSONAL_EXPENSE_NOT_ALLOWED = "personal_expense_not_allowed";
 
-export type ExpenseCategory =
-  | "travel"
-  | "meals"
-  | "equipment"
-  | "training"
-  | "personal";
+export const EXPENSE_CATEGORIES = [
+  "travel",
+  "meals",
+  "equipment",
+  "training",
+  "personal",
+] as const;
+
+export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
+
+export function isExpenseCategory(value: unknown): value is ExpenseCategory {
+  return EXPENSE_CATEGORIES.some((category) => category === value);
+}
 
 export type RequiredRole = Extract<EmployeeRole, "manager" | "finance">;
 
