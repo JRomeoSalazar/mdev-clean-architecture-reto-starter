@@ -1,26 +1,26 @@
+import { InMemoryEmployeeRepository } from "@/adapters/persistence/in-memory-employee-repository";
+import { InMemoryExpenseRepository } from "@/adapters/persistence/in-memory-expense-repository";
+import { InMemoryNotifier } from "@/adapters/notifications/in-memory-notifier";
 import { describe, expect, test } from "bun:test";
 import type { Notifier } from "@/application/ports/notifier";
 import { ApproveExpense } from "@/application/approve-expense";
 import { employeeId, expenseId } from "@/domain/identifiers";
 import {
   FailingNotifier,
-  FakeEmployeeRepository,
-  FakeExpenseRepository,
   FakeLogger,
-  FakeNotifier,
   FixedClock,
   resolutionFixture,
   seedPendingExpense,
 } from "./fakes";
 
 async function setup(options: { notifier?: Notifier; amount?: number } = {}) {
-  const expenses = new FakeExpenseRepository();
+  const expenses = new InMemoryExpenseRepository();
   await seedPendingExpense(expenses, options.amount);
   const logger = new FakeLogger();
   const useCase = new ApproveExpense(
-    new FakeEmployeeRepository(resolutionFixture.employees),
+    new InMemoryEmployeeRepository(resolutionFixture.employees),
     expenses,
-    options.notifier ?? new FakeNotifier(),
+    options.notifier ?? new InMemoryNotifier(),
     new FixedClock(resolutionFixture.today),
     logger,
   );
@@ -29,11 +29,11 @@ async function setup(options: { notifier?: Notifier; amount?: number } = {}) {
 }
 
 const approve = (actorId: string) => ({ expenseId: "expense-1", actorId });
-const latest = (expenses: FakeExpenseRepository) => expenses.saved[expenses.saved.length - 1];
+const latest = (expenses: InMemoryExpenseRepository) => expenses.saved[expenses.saved.length - 1];
 
 describe("ApproveExpense", () => {
   test("a manager approves a pending manager expense and the employee is notified", async () => {
-    const notifier = new FakeNotifier();
+    const notifier = new InMemoryNotifier();
     const { useCase, expenses } = await setup({ notifier });
 
     const result = await useCase.execute(approve("manager"));
@@ -62,7 +62,7 @@ describe("ApproveExpense", () => {
     ["the owner on their own expense", "owner", 60_000, "own_request"],
     ["finance on a manager expense", "finance", 60_000, "forbidden_role"],
   ] as const)("refuses %s without saving or notifying", async (_name, actorId, amount, reason) => {
-    const notifier = new FakeNotifier();
+    const notifier = new InMemoryNotifier();
     const { useCase, expenses } = await setup({ notifier, amount });
 
     const result = await useCase.execute(approve(actorId));

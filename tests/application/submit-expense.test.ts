@@ -1,3 +1,6 @@
+import { InMemoryEmployeeRepository } from "@/adapters/persistence/in-memory-employee-repository";
+import { InMemoryExpenseRepository } from "@/adapters/persistence/in-memory-expense-repository";
+import { InMemoryNotifier } from "@/adapters/notifications/in-memory-notifier";
 import { describe, expect, test } from "bun:test";
 import type { Notifier } from "@/application/ports/notifier";
 import { SubmitExpense } from "@/application/submit-expense";
@@ -6,10 +9,7 @@ import { employeeId, expenseId } from "@/domain/identifiers";
 import { LocalDate } from "@/domain/local-date";
 import {
   FailingNotifier,
-  FakeEmployeeRepository,
-  FakeExpenseRepository,
   FakeLogger,
-  FakeNotifier,
   FixedClock,
   FixedIdGenerator,
 } from "./fakes";
@@ -17,9 +17,9 @@ import {
 const today = LocalDate.parse("2026-10-27");
 const EMPLOYEE_ID = "employee-1";
 
-function setup(notifier: Notifier = new FakeNotifier()) {
-  const expenses = new FakeExpenseRepository();
-  const employees = new FakeEmployeeRepository([
+function setup(notifier: Notifier = new InMemoryNotifier()) {
+  const expenses = new InMemoryExpenseRepository();
+  const employees = new InMemoryEmployeeRepository([
     Employee.create(employeeId(EMPLOYEE_ID), "Ana", "employee"),
   ]);
   const logger = new FakeLogger();
@@ -44,7 +44,7 @@ const input = (category: "meals" | "training" | "equipment" | "personal", amount
 
 describe("SubmitExpense", () => {
   test("approves meals of 45 euros and notifies the employee", async () => {
-    const notifier = new FakeNotifier();
+    const notifier = new InMemoryNotifier();
     const { useCase, expenses } = setup(notifier);
 
     const result = await useCase.execute(input("meals", 4_500));
@@ -57,7 +57,7 @@ describe("SubmitExpense", () => {
   });
 
   test("rejects a personal expense and notifies the employee with the reason", async () => {
-    const notifier = new FakeNotifier();
+    const notifier = new InMemoryNotifier();
     const { useCase, expenses } = setup(notifier);
 
     const result = await useCase.execute(input("personal", 2_000));
@@ -78,7 +78,7 @@ describe("SubmitExpense", () => {
     ["training", 60_000, "manager"],
     ["equipment", 150_000, "finance"],
   ] as const)("leaves %s of %d cents pending for %s without notifying", async (category, amount, role) => {
-    const notifier = new FakeNotifier();
+    const notifier = new InMemoryNotifier();
     const { useCase, expenses } = setup(notifier);
 
     const result = await useCase.execute(input(category, amount));
@@ -97,7 +97,7 @@ describe("SubmitExpense", () => {
   });
 
   test("returns employee_not_found without saving or notifying", async () => {
-    const notifier = new FakeNotifier();
+    const notifier = new InMemoryNotifier();
     const { useCase, expenses } = setup(notifier);
 
     const result = await useCase.execute({ ...input("meals", 4_500), employeeId: "unknown" });
@@ -147,7 +147,7 @@ describe("SubmitExpense", () => {
     ["a negative amount", { amount: -100 }],
     ["a non-integer amount", { amount: 10.5 }],
   ])("returns invalid_expense for %s without saving or notifying", async (_name, override) => {
-    const notifier = new FakeNotifier();
+    const notifier = new InMemoryNotifier();
     const { useCase, expenses } = setup(notifier);
 
     const result = await useCase.execute({ ...input("meals", 4_500), ...override });

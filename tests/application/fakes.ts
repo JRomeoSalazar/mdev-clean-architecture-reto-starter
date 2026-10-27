@@ -1,47 +1,12 @@
 import type { Clock } from "@/application/ports/clock";
-import type { EmployeeRepository } from "@/application/ports/employee-repository";
 import type { ExpenseRepository } from "@/application/ports/expense-repository";
 import type { LogContext, Logger } from "@/application/ports/logger";
 import type { IdGenerator } from "@/application/ports/id-generator";
-import type { ExpenseResolution, Notifier } from "@/application/ports/notifier";
+import type { Notifier } from "@/application/ports/notifier";
 import { Employee } from "@/domain/employee";
 import { Expense } from "@/domain/expense";
-import { employeeId, expenseId, type EmployeeId, type ExpenseId } from "@/domain/identifiers";
+import { employeeId, expenseId, type ExpenseId } from "@/domain/identifiers";
 import { LocalDate } from "@/domain/local-date";
-
-export class FakeEmployeeRepository implements EmployeeRepository {
-  constructor(private readonly employees: readonly Employee[] = []) {}
-
-  async findEmployeeById(id: EmployeeId): Promise<Employee | null> {
-    return this.employees.find((employee) => employee.id === id) ?? null;
-  }
-}
-
-export class FakeExpenseRepository implements ExpenseRepository {
-  readonly saved: Expense[] = [];
-
-  async findExpenseById(id: ExpenseId): Promise<Expense | null> {
-    return this.saved.find((expense) => expense.id === id) ?? null;
-  }
-
-  async saveExpense(expense: Expense): Promise<void> {
-    const index = this.saved.findIndex((saved) => saved.id === expense.id);
-
-    if (index === -1) {
-      this.saved.push(expense);
-    } else {
-      this.saved[index] = expense;
-    }
-  }
-}
-
-export class FakeNotifier implements Notifier {
-  readonly sent: ExpenseResolution[] = [];
-
-  async notifyResolution(resolution: ExpenseResolution): Promise<void> {
-    this.sent.push(resolution);
-  }
-}
 
 export class FailingNotifier implements Notifier {
   async notifyResolution(): Promise<void> {
