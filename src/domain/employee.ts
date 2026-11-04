@@ -21,4 +21,8 @@ export class Employee {
 
     return new Employee(id, name.trim(), role);
   }
+
+  edit(name: string, role: EmployeeRole): Employee {
+    return Employee.create(this.id, name, role);
+  }
 }
